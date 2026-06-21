@@ -72,3 +72,20 @@ def calculate_citation_accuracy(generated_answer: str, cited_document_ids: list[
         
     return 2.0 * precision * recall / (precision + recall)
 
+def calculate_average_ttft(ttfts: list[float]) -> float:
+    """
+    Calculate average Time-To-First-Token (TTFT).
+    """
+    if not ttfts:
+        return 0.0
+    return sum(ttfts) / len(ttfts)
+
+def calculate_throughput(total_tokens: int, total_duration_seconds: float) -> float:
+    """
+    Calculate throughput in tokens per second.
+    """
+    if total_duration_seconds <= 0.0:
+        return 0.0
+    return total_tokens / total_duration_seconds
+
+
