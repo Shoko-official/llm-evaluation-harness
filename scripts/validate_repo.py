@@ -21,6 +21,8 @@ REQUIRED_FILES = [
     "figures/README.md",
     "evaluation/README.md",
     "scripts/validate_repo.py",
+    "scripts/generate_report.py",
+    "scripts/export_to_paper.py",
     "tests/README.md",
 ]
 

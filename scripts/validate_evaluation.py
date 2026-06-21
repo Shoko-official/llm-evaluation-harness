@@ -71,6 +71,8 @@ def calculate_metrics(input_data: dict, output_data: dict) -> dict[str, float]:
     recalls_10 = []
     citation_accuracies = []
     citation_groundings = []
+    ttfts = []
+    throughputs = []
     
     from evaluation.metrics import calculate_recall_at_k, calculate_mrr, calculate_citation_accuracy
     from evaluation.citation_verifier import verify_citation_grounding
@@ -91,11 +93,18 @@ def calculate_metrics(input_data: dict, output_data: dict) -> dict[str, float]:
         citation_accuracies.append(calculate_citation_accuracy(generated, cited))
         citation_groundings.append(verify_citation_grounding(cited, retrieved))
         
+        if res.get("ttft") is not None:
+            ttfts.append(res["ttft"])
+        if res.get("throughput") is not None:
+            throughputs.append(res["throughput"])
+        
     mrr_val = calculate_mrr(all_retrieved, all_expected)
     avg_recall_5 = sum(recalls_5) / len(recalls_5) if recalls_5 else 0.0
     avg_recall_10 = sum(recalls_10) / len(recalls_10) if recalls_10 else 0.0
     avg_citation_accuracy = sum(citation_accuracies) / len(citation_accuracies) if citation_accuracies else 0.0
     avg_citation_grounding = sum(citation_groundings) / len(citation_groundings) if citation_groundings else 0.0
+    avg_ttft = sum(ttfts) / len(ttfts) if ttfts else 0.0
+    avg_throughput = sum(throughputs) / len(throughputs) if throughputs else 0.0
     
     print("Evaluation Metrics:")
     print(f"  Mean Reciprocal Rank (MRR): {mrr_val:.4f}")
@@ -103,13 +112,17 @@ def calculate_metrics(input_data: dict, output_data: dict) -> dict[str, float]:
     print(f"  Recall@10: {avg_recall_10:.4f}")
     print(f"  Citation Accuracy: {avg_citation_accuracy:.4f}")
     print(f"  Citation Grounding: {avg_citation_grounding:.4f}")
+    print(f"  Average TTFT: {avg_ttft:.4f}s")
+    print(f"  Average Throughput: {avg_throughput:.4f} tokens/s")
     
     return {
         "mrr": mrr_val,
         "recall@5": avg_recall_5,
         "recall@10": avg_recall_10,
         "citation_accuracy": avg_citation_accuracy,
-        "citation_grounding": avg_citation_grounding
+        "citation_grounding": avg_citation_grounding,
+        "ttft": avg_ttft,
+        "throughput": avg_throughput
     }
 
 def main() -> None:

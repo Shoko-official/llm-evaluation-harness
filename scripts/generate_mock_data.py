@@ -51,31 +51,41 @@ def generate_mock_data(input_path: Path, output_path: Path) -> None:
                 "query_id": "Q-001",
                 "generated_answer": "Attention is all you need as described in [DOC-101] and [DOC-102].",
                 "retrieved_document_ids": ["DOC-101", "DOC-102", "DOC-999"],
-                "cited_document_ids": ["DOC-101", "DOC-102"]
+                "cited_document_ids": ["DOC-101", "DOC-102"],
+                "ttft": 0.12,
+                "throughput": 42.5
             },
             {
                 "query_id": "Q-002",
                 "generated_answer": "Sparse attention reduces complexity, see [DOC-201].",
                 "retrieved_document_ids": ["DOC-201", "DOC-202"],
-                "cited_document_ids": ["DOC-201"]
+                "cited_document_ids": ["DOC-201"],
+                "ttft": 0.18,
+                "throughput": 38.2
             },
             {
                 "query_id": "Q-003",
                 "generated_answer": "Flash attention optimizes GPU memory accesses, reference [DOC-301].",
                 "retrieved_document_ids": ["DOC-301", "DOC-999", "DOC-998"],
-                "cited_document_ids": ["DOC-301"]
+                "cited_document_ids": ["DOC-301"],
+                "ttft": 0.15,
+                "throughput": 41.0
             },
             {
                 "query_id": "Q-004",
                 "generated_answer": "Multi-query attention uses a single key-value head [DOC-401].",
                 "retrieved_document_ids": ["DOC-401", "DOC-402"],
-                "cited_document_ids": ["DOC-401"]
+                "cited_document_ids": ["DOC-401"],
+                "ttft": 0.22,
+                "throughput": 35.6
             },
             {
                 "query_id": "Q-005",
                 "generated_answer": "Group-query attention groups query heads, reference [DOC-501].",
                 "retrieved_document_ids": ["DOC-501", "DOC-502"],
-                "cited_document_ids": ["DOC-501"]
+                "cited_document_ids": ["DOC-501"],
+                "ttft": 0.14,
+                "throughput": 44.1
             }
         ]
     }

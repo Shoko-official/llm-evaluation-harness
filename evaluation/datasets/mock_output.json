@@ -14,7 +14,9 @@
       "cited_document_ids": [
         "DOC-101",
         "DOC-102"
-      ]
+      ],
+      "ttft": 0.12,
+      "throughput": 42.5
     },
     {
       "query_id": "Q-002",
@@ -25,7 +27,9 @@
       ],
       "cited_document_ids": [
         "DOC-201"
-      ]
+      ],
+      "ttft": 0.18,
+      "throughput": 38.2
     },
     {
       "query_id": "Q-003",
@@ -37,7 +41,9 @@
       ],
       "cited_document_ids": [
         "DOC-301"
-      ]
+      ],
+      "ttft": 0.15,
+      "throughput": 41.0
     },
     {
       "query_id": "Q-004",
@@ -48,7 +54,9 @@
       ],
       "cited_document_ids": [
         "DOC-401"
-      ]
+      ],
+      "ttft": 0.22,
+      "throughput": 35.6
     },
     {
       "query_id": "Q-005",
@@ -59,7 +67,9 @@
       ],
       "cited_document_ids": [
         "DOC-501"
-      ]
+      ],
+      "ttft": 0.14,
+      "throughput": 44.1
     }
   ]
 }

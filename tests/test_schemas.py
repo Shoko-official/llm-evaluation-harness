@@ -200,8 +200,8 @@ class TestEvaluationSchemas(unittest.TestCase):
             "dataset_id": "DS-001",
             "model_id": "MODEL-X",
             "results": [
-                {"query_id": "Q-001", "generated_answer": "ans1", "retrieved_document_ids": ["DOC-5", "DOC-1"], "cited_document_ids": []},
-                {"query_id": "Q-002", "generated_answer": "ans2", "retrieved_document_ids": ["DOC-3"], "cited_document_ids": []}
+                {"query_id": "Q-001", "generated_answer": "ans1", "retrieved_document_ids": ["DOC-5", "DOC-1"], "cited_document_ids": [], "ttft": 0.1, "throughput": 40.0},
+                {"query_id": "Q-002", "generated_answer": "ans2", "retrieved_document_ids": ["DOC-3"], "cited_document_ids": [], "ttft": 0.2, "throughput": 20.0}
             ]
         }
         
@@ -211,5 +211,7 @@ class TestEvaluationSchemas(unittest.TestCase):
         self.assertAlmostEqual(metrics["recall@10"], 0.75)
         self.assertAlmostEqual(metrics["citation_accuracy"], 1.0)
         self.assertAlmostEqual(metrics["citation_grounding"], 1.0)
+        self.assertAlmostEqual(metrics["ttft"], 0.15)
+        self.assertAlmostEqual(metrics["throughput"], 30.0)
 
 
