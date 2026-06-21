@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EvaluationInputSchema",
+  "description": "Schema for evaluation input test cases.",
+  "type": "object",
+  "properties": {
+    "dataset_id": {
+      "type": "string",
+      "description": "Unique identifier for the evaluation dataset."
+    },
+    "test_cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "query_id": {
+            "type": "string",
+            "description": "Unique identifier for the test case query."
+          },
+          "query": {
+            "type": "string",
+            "description": "The prompt/query string to be sent to the model."
+          },
+          "expected_document_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of ground-truth document identifiers that should be retrieved."
+          }
+        },
+        "required": ["query_id", "query", "expected_document_ids"],
+        "additionalProperties": false
+      },
+      "description": "List of evaluation test cases."
+    }
+  },
+  "required": ["dataset_id", "test_cases"],
+  "additionalProperties": false
+}
