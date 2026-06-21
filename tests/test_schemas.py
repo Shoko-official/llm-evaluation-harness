@@ -147,3 +147,26 @@ class TestEvaluationSchemas(unittest.TestCase):
         }
         with self.assertRaises(SystemExit):
             validate_alignment(input_data, output_data)
+
+    def test_mock_generator(self) -> None:
+        import tempfile
+        from scripts.generate_mock_data import generate_mock_data
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            input_file = tmp_path / "input.json"
+            output_file = tmp_path / "output.json"
+            
+            generate_mock_data(input_file, output_file)
+            
+            # Read and validate
+            with open(input_file, "r", encoding="utf-8") as f:
+                input_data = json.load(f)
+            with open(output_file, "r", encoding="utf-8") as f:
+                output_data = json.load(f)
+                
+            validate(instance=input_data, schema=self.input_schema)
+            validate(instance=output_data, schema=self.output_schema)
+            # Alignment check should pass without SystemExit
+            validate_alignment(input_data, output_data)
+
