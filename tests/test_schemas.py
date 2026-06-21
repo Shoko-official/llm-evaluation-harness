@@ -209,5 +209,7 @@ class TestEvaluationSchemas(unittest.TestCase):
         self.assertAlmostEqual(metrics["mrr"], 0.75)
         self.assertAlmostEqual(metrics["recall@5"], 0.75)
         self.assertAlmostEqual(metrics["recall@10"], 0.75)
+        self.assertAlmostEqual(metrics["citation_accuracy"], 1.0)
+        self.assertAlmostEqual(metrics["citation_grounding"], 1.0)
 
 
