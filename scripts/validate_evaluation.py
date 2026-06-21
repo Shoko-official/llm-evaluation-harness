@@ -69,13 +69,18 @@ def calculate_metrics(input_data: dict, output_data: dict) -> dict[str, float]:
     
     recalls_5 = []
     recalls_10 = []
+    citation_accuracies = []
+    citation_groundings = []
     
-    from evaluation.metrics import calculate_recall_at_k, calculate_mrr
+    from evaluation.metrics import calculate_recall_at_k, calculate_mrr, calculate_citation_accuracy
+    from evaluation.citation_verifier import verify_citation_grounding
     
     for res in output_data.get("results", []):
         q_id = res["query_id"]
         retrieved = res.get("retrieved_document_ids", [])
         expected = expected_map.get(q_id, [])
+        cited = res.get("cited_document_ids", [])
+        generated = res.get("generated_answer", "")
         
         all_retrieved.append(retrieved)
         all_expected.append(expected)
@@ -83,19 +88,28 @@ def calculate_metrics(input_data: dict, output_data: dict) -> dict[str, float]:
         recalls_5.append(calculate_recall_at_k(retrieved, expected, 5))
         recalls_10.append(calculate_recall_at_k(retrieved, expected, 10))
         
+        citation_accuracies.append(calculate_citation_accuracy(generated, cited))
+        citation_groundings.append(verify_citation_grounding(cited, retrieved))
+        
     mrr_val = calculate_mrr(all_retrieved, all_expected)
     avg_recall_5 = sum(recalls_5) / len(recalls_5) if recalls_5 else 0.0
     avg_recall_10 = sum(recalls_10) / len(recalls_10) if recalls_10 else 0.0
+    avg_citation_accuracy = sum(citation_accuracies) / len(citation_accuracies) if citation_accuracies else 0.0
+    avg_citation_grounding = sum(citation_groundings) / len(citation_groundings) if citation_groundings else 0.0
     
     print("Evaluation Metrics:")
     print(f"  Mean Reciprocal Rank (MRR): {mrr_val:.4f}")
     print(f"  Recall@5: {avg_recall_5:.4f}")
     print(f"  Recall@10: {avg_recall_10:.4f}")
+    print(f"  Citation Accuracy: {avg_citation_accuracy:.4f}")
+    print(f"  Citation Grounding: {avg_citation_grounding:.4f}")
     
     return {
         "mrr": mrr_val,
         "recall@5": avg_recall_5,
-        "recall@10": avg_recall_10
+        "recall@10": avg_recall_10,
+        "citation_accuracy": avg_citation_accuracy,
+        "citation_grounding": avg_citation_grounding
     }
 
 def main() -> None:
