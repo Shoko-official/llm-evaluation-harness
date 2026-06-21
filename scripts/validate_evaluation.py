@@ -6,6 +6,10 @@ import sys
 from pathlib import Path
 from jsonschema import validate, ValidationError
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 def fail(message: str) -> None:
     print(f"Error: {message}", file=sys.stderr)
     sys.exit(1)
@@ -57,6 +61,43 @@ def validate_alignment(input_data: dict, output_data: dict) -> None:
     if extra_queries:
         fail(f"Output contains results for unknown query IDs: {', '.join(sorted(extra_queries))}")
 
+def calculate_metrics(input_data: dict, output_data: dict) -> dict[str, float]:
+    expected_map = {tc["query_id"]: tc.get("expected_document_ids", []) for tc in input_data.get("test_cases", [])}
+    
+    all_retrieved = []
+    all_expected = []
+    
+    recalls_5 = []
+    recalls_10 = []
+    
+    from evaluation.metrics import calculate_recall_at_k, calculate_mrr
+    
+    for res in output_data.get("results", []):
+        q_id = res["query_id"]
+        retrieved = res.get("retrieved_document_ids", [])
+        expected = expected_map.get(q_id, [])
+        
+        all_retrieved.append(retrieved)
+        all_expected.append(expected)
+        
+        recalls_5.append(calculate_recall_at_k(retrieved, expected, 5))
+        recalls_10.append(calculate_recall_at_k(retrieved, expected, 10))
+        
+    mrr_val = calculate_mrr(all_retrieved, all_expected)
+    avg_recall_5 = sum(recalls_5) / len(recalls_5) if recalls_5 else 0.0
+    avg_recall_10 = sum(recalls_10) / len(recalls_10) if recalls_10 else 0.0
+    
+    print("Evaluation Metrics:")
+    print(f"  Mean Reciprocal Rank (MRR): {mrr_val:.4f}")
+    print(f"  Recall@5: {avg_recall_5:.4f}")
+    print(f"  Recall@10: {avg_recall_10:.4f}")
+    
+    return {
+        "mrr": mrr_val,
+        "recall@5": avg_recall_5,
+        "recall@10": avg_recall_10
+    }
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate evaluation inputs and outputs against schemas")
     parser.add_argument("--input", type=str, help="Path to the evaluation input JSON dataset file")
@@ -86,6 +127,7 @@ def main() -> None:
     if input_data and output_data:
         validate_alignment(input_data, output_data)
         print("Input and output alignment validation successful.")
+        calculate_metrics(input_data, output_data)
 
 if __name__ == "__main__":
     main()
