@@ -1,0 +1,44 @@
+{
+  "dataset_id": "mock_baseline",
+  "test_cases": [
+    {
+      "query_id": "Q-001",
+      "query": "What is the primary attention mechanism in transformer models?",
+      "expected_document_ids": [
+        "DOC-101",
+        "DOC-102"
+      ]
+    },
+    {
+      "query_id": "Q-002",
+      "query": "How is sparse attention defined?",
+      "expected_document_ids": [
+        "DOC-201"
+      ]
+    },
+    {
+      "query_id": "Q-003",
+      "query": "What are the benefits of flash attention?",
+      "expected_document_ids": [
+        "DOC-301",
+        "DOC-302",
+        "DOC-303"
+      ]
+    },
+    {
+      "query_id": "Q-004",
+      "query": "How does multi-query attention differ from multi-head attention?",
+      "expected_document_ids": [
+        "DOC-401"
+      ]
+    },
+    {
+      "query_id": "Q-005",
+      "query": "What is group-query attention?",
+      "expected_document_ids": [
+        "DOC-501",
+        "DOC-502"
+      ]
+    }
+  ]
+}

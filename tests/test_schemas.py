@@ -170,3 +170,21 @@ class TestEvaluationSchemas(unittest.TestCase):
             # Alignment check should pass without SystemExit
             validate_alignment(input_data, output_data)
 
+    def test_baseline_datasets(self) -> None:
+        input_file = ROOT / "evaluation" / "datasets" / "mock_input.json"
+        output_file = ROOT / "evaluation" / "datasets" / "mock_output.json"
+        
+        self.assertTrue(input_file.is_file(), "Baseline input dataset is missing")
+        self.assertTrue(output_file.is_file(), "Baseline output dataset is missing")
+        
+        with open(input_file, "r", encoding="utf-8") as f:
+            input_data = json.load(f)
+        with open(output_file, "r", encoding="utf-8") as f:
+            output_data = json.load(f)
+            
+        validate(instance=input_data, schema=self.input_schema)
+        validate(instance=output_data, schema=self.output_schema)
+        # Alignment check should pass without SystemExit
+        validate_alignment(input_data, output_data)
+
+
