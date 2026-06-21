@@ -6,7 +6,14 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from evaluation.metrics import calculate_recall_at_k, calculate_reciprocal_rank, calculate_mrr, calculate_citation_accuracy
+from evaluation.metrics import (
+    calculate_recall_at_k,
+    calculate_reciprocal_rank,
+    calculate_mrr,
+    calculate_citation_accuracy,
+    calculate_average_ttft,
+    calculate_throughput
+)
 
 class TestMetrics(unittest.TestCase):
     def test_recall_at_k(self) -> None:
@@ -50,6 +57,12 @@ class TestMetrics(unittest.TestCase):
         self.assertAlmostEqual(calculate_citation_accuracy("Some text without docs", []), 1.0)
         self.assertAlmostEqual(calculate_citation_accuracy("", ["DOC-101"]), 0.0)
         self.assertAlmostEqual(calculate_citation_accuracy("Some text without docs", ["DOC-101"]), 0.0)
+
+    def test_serving_metrics(self) -> None:
+        self.assertAlmostEqual(calculate_average_ttft([0.1, 0.2, 0.3]), 0.2)
+        self.assertEqual(calculate_average_ttft([]), 0.0)
+        self.assertAlmostEqual(calculate_throughput(100, 2.5), 40.0)
+        self.assertEqual(calculate_throughput(100, 0.0), 0.0)
 
 if __name__ == "__main__":
     unittest.main()
