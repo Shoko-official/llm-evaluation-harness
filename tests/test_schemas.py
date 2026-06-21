@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.validate_evaluation import validate_alignment
+from scripts.validate_evaluation import validate_alignment, calculate_metrics
 
 class TestEvaluationSchemas(unittest.TestCase):
     def setUp(self) -> None:
@@ -186,5 +186,28 @@ class TestEvaluationSchemas(unittest.TestCase):
         validate(instance=output_data, schema=self.output_schema)
         # Alignment check should pass without SystemExit
         validate_alignment(input_data, output_data)
+
+    def test_calculate_metrics(self) -> None:
+        input_data = {
+            "dataset_id": "DS-001",
+            "test_cases": [
+                {"query_id": "Q-001", "query": "q1", "expected_document_ids": ["DOC-1", "DOC-2"]},
+                {"query_id": "Q-002", "query": "q2", "expected_document_ids": ["DOC-3"]}
+            ]
+        }
+        output_data = {
+            "run_id": "RUN-001",
+            "dataset_id": "DS-001",
+            "model_id": "MODEL-X",
+            "results": [
+                {"query_id": "Q-001", "generated_answer": "ans1", "retrieved_document_ids": ["DOC-5", "DOC-1"], "cited_document_ids": []},
+                {"query_id": "Q-002", "generated_answer": "ans2", "retrieved_document_ids": ["DOC-3"], "cited_document_ids": []}
+            ]
+        }
+        
+        metrics = calculate_metrics(input_data, output_data)
+        self.assertAlmostEqual(metrics["mrr"], 0.75)
+        self.assertAlmostEqual(metrics["recall@5"], 0.75)
+        self.assertAlmostEqual(metrics["recall@10"], 0.75)
 
 
