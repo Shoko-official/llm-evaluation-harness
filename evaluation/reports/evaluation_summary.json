@@ -1,0 +1,9 @@
+{
+  "mrr": 1.0,
+  "recall@5": 0.8666666666666666,
+  "recall@10": 0.8666666666666666,
+  "citation_accuracy": 1.0,
+  "citation_grounding": 1.0,
+  "ttft": 0.162,
+  "throughput": 40.28
+}

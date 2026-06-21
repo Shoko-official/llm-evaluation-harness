@@ -1,71 +1,144 @@
+#!/usr/bin/env python3
 """
-Automated evaluation report generator.
+Automated Evaluation Report Generator.
+Validates input/output, calculates metrics, writes summaries, and updates paper tables.
 """
 from __future__ import annotations
 
 import argparse
-import sys
 import json
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.validate_evaluation import calculate_metrics
+from scripts.validate_evaluation import validate_input_file, validate_output_file, validate_alignment, calculate_metrics
+from scripts.export_to_paper import export_metrics_to_paper
+
 
 def generate_report(metrics: dict[str, float], report_dir: Path) -> None:
+    # Ensure reports directory exists
     report_dir.mkdir(parents=True, exist_ok=True)
-    
-    # 1. JSON report
-    json_report_path = report_dir / "evaluation_report.json"
-    with open(json_report_path, "w", encoding="utf-8") as f:
+
+    # 1. Write JSON report
+    json_path = report_dir / "evaluation_report.json"
+    with open(json_path, "w", encoding="utf-8") as f:
         json.dump(metrics, f, indent=2)
-        
-    # 2. Markdown report
-    md_report_path = report_dir / "evaluation_report.md"
-    md_lines = [
+    print(f"Generated JSON report: {json_path}")
+
+    # 2. Write MD report
+    md_path = report_dir / "evaluation_report.md"
+    rows = [
         "# Evaluation Report",
         "",
-        "## Summary Metrics",
-        "",
-        f"- **Mean Reciprocal Rank (MRR)**: {metrics.get('mrr', 0.0):.4f}",
-        f"- **Recall@5**: {metrics.get('recall@5', 0.0):.4f}",
-        f"- **Recall@10**: {metrics.get('recall@10', 0.0):.4f}",
-        f"- **Citation Accuracy**: {metrics.get('citation_accuracy', 0.0):.4f}",
-        f"- **Citation Grounding**: {metrics.get('citation_grounding', 0.0):.4f}",
-        ""
+        "| Metric | Value |",
+        "|---|---|",
+        f"| Mean Reciprocal Rank (MRR) | {metrics.get('mrr', 0.0):.4f} |",
+        f"| Recall@5 | {metrics.get('recall@5', 0.0):.4f} |",
+        f"| Recall@10 | {metrics.get('recall@10', 0.0):.4f} |",
+        f"| Citation Accuracy | {metrics.get('citation_accuracy', 0.0):.4f} |",
+        f"| Citation Grounding | {metrics.get('citation_grounding', 0.0):.4f} |",
     ]
-    md_report_path.write_text("\n".join(md_lines), encoding="utf-8")
-    print(f"Generated evaluation reports at: {json_report_path} and {md_report_path}")
+
+    if "ttft" in metrics:
+        rows.append(f"| Average TTFT | {metrics['ttft']:.4f}s |")
+    if "throughput" in metrics:
+        rows.append(f"| Average Throughput | {metrics['throughput']:.4f} tokens/s |")
+
+    md_content = "\n".join(rows) + "\n"
+    md_path.write_text(md_content, encoding="utf-8")
+    print(f"Generated Markdown report: {md_path}")
+
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate evaluation summaries (JSON/Markdown)")
-    parser.add_argument("--input", type=str, required=True, help="Path to input JSON dataset")
-    parser.add_argument("--output", type=str, required=True, help="Path to output JSON results")
-    parser.add_argument("--report-dir", type=str, default="evaluation/reports", help="Directory to save generated reports")
-    
+    parser = argparse.ArgumentParser(
+        description="Generate evaluation reports and export metrics to paper"
+    )
+    parser.add_argument(
+        "--input",
+        type=str,
+        help="Path to evaluation input JSON file",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        help="Path to evaluation output JSON file",
+    )
+    parser.add_argument(
+        "--input-schema",
+        type=str,
+        help="Path to input JSON schema",
+    )
+    parser.add_argument(
+        "--output-schema",
+        type=str,
+        help="Path to output JSON schema",
+    )
+    parser.add_argument(
+        "--report-dir",
+        type=str,
+        help="Path to save reports directory",
+    )
+    parser.add_argument(
+        "--paper-dir",
+        type=str,
+        help="Path to paper repository root",
+    )
+
     args = parser.parse_args()
-    
-    input_path = Path(args.input)
-    output_path = Path(args.output)
-    report_dir = ROOT / args.report_dir
-    
-    if not input_path.is_file():
-        print(f"Input file not found: {input_path}", file=sys.stderr)
-        sys.exit(1)
-        
-    if not output_path.is_file():
-        print(f"Output file not found: {output_path}", file=sys.stderr)
-        sys.exit(1)
-        
-    with open(input_path, "r", encoding="utf-8") as f:
-        input_data = json.load(f)
-    with open(output_path, "r", encoding="utf-8") as f:
-        output_data = json.load(f)
-        
+
+    input_path = (
+        Path(args.input)
+        if args.input
+        else ROOT / "evaluation" / "datasets" / "mock_input.json"
+    )
+    output_path = (
+        Path(args.output)
+        if args.output
+        else ROOT / "evaluation" / "datasets" / "mock_output.json"
+    )
+
+    input_schema_path = (
+        Path(args.input_schema)
+        if args.input_schema
+        else ROOT / "evaluation" / "schemas" / "input.json"
+    )
+    output_schema_path = (
+        Path(args.output_schema)
+        if args.output_schema
+        else ROOT / "evaluation" / "schemas" / "output.json"
+    )
+
+    report_dir_path = (
+        Path(args.report_dir)
+        if args.report_dir
+        else ROOT / "evaluation" / "reports"
+    )
+
+    paper_dir_path = (
+        Path(args.paper_dir)
+        if args.paper_dir
+        else ROOT.parent / "modern-llm-systems-paper"
+    )
+
+    # 1. Validate
+    input_data = validate_input_file(input_path, input_schema_path)
+    output_data = validate_output_file(output_path, output_schema_path)
+
+    # 2. Check alignment
+    validate_alignment(input_data, output_data)
+
+    # 3. Calculate metrics
     metrics = calculate_metrics(input_data, output_data)
-    generate_report(metrics, report_dir)
+
+    # 4. Generate reports
+    generate_report(metrics, report_dir_path)
+
+    # 5. Export to paper
+    export_metrics_to_paper(metrics, paper_dir_path)
+
 
 if __name__ == "__main__":
     main()
