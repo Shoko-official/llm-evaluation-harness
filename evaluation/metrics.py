@@ -54,7 +54,7 @@ def calculate_citation_accuracy(generated_answer: str, cited_document_ids: list[
         return 1.0 if not cited_document_ids else 0.0
         
     # Extract mentioned document IDs (case-insensitive search)
-    mentioned = set(re.findall(r"DOC-\w+", generated_answer.upper()))
+    mentioned = set(re.findall(r"(?:DOC-\w+|SOURCE-[A-Z0-9-]+|CLAIM-[A-Z0-9-]+)", generated_answer.upper()))
     cited = {c.upper() for c in cited_document_ids}
     
     if not mentioned:
