@@ -20,6 +20,12 @@ class TestEvaluationSchemas(unittest.TestCase):
         with open(self.schemas_dir / "output.json", "r", encoding="utf-8") as f:
             self.output_schema = json.load(f)
 
+        with open(self.schemas_dir / "observability_input.json", "r", encoding="utf-8") as f:
+            self.obs_input_schema = json.load(f)
+
+        with open(self.schemas_dir / "observability_output.json", "r", encoding="utf-8") as f:
+            self.obs_output_schema = json.load(f)
+
     def test_valid_input(self) -> None:
         valid_input = {
             "dataset_id": "DS-001",
@@ -213,5 +219,139 @@ class TestEvaluationSchemas(unittest.TestCase):
         self.assertAlmostEqual(metrics["citation_grounding"], 1.0)
         self.assertAlmostEqual(metrics["ttft"], 0.15)
         self.assertAlmostEqual(metrics["throughput"], 30.0)
+
+    def test_valid_observability_input(self) -> None:
+        valid_input = {
+            "dataset_id": "OBS-DS-001",
+            "test_cases": [
+                {
+                    "query_id": "Q-001",
+                    "expected_span_operations": ["generate_tokens", "is_prompt_safe"],
+                    "max_expected_latency_ms": 150.0
+                }
+            ]
+        }
+        validate(instance=valid_input, schema=self.obs_input_schema)
+
+    def test_valid_observability_output(self) -> None:
+        valid_output = {
+            "run_id": "RUN-001",
+            "dataset_id": "OBS-DS-001",
+            "model_id": "MODEL-XYZ",
+            "results": [
+                {
+                    "query_id": "Q-001",
+                    "captured_spans": [
+                        {
+                            "span_id": "8a0f2b3c4d5e6f7a",
+                            "trace_id": "0123456789abcdef0123456789abcdef",
+                            "parent_span_id": "N/A",
+                            "name": "is_prompt_safe",
+                            "start_time": "2026-06-22T17:00:00.000Z",
+                            "end_time": "2026-06-22T17:00:00.050Z",
+                            "duration_ms": 50.0,
+                            "service_name": "security",
+                            "status": "ok"
+                        }
+                    ]
+                }
+            ]
+        }
+        validate(instance=valid_output, schema=self.obs_output_schema)
+
+    def test_observability_mock_generator(self) -> None:
+        import tempfile
+        from scripts.generate_mock_data import generate_mock_observability_data
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            input_file = tmp_path / "observability_input.json"
+            output_file = tmp_path / "observability_output.json"
+            
+            generate_mock_observability_data(input_file, output_file)
+            
+            # Read and validate
+            with open(input_file, "r", encoding="utf-8") as f:
+                input_data = json.load(f)
+            with open(output_file, "r", encoding="utf-8") as f:
+                output_data = json.load(f)
+                
+            validate(instance=input_data, schema=self.obs_input_schema)
+            validate(instance=output_data, schema=self.obs_output_schema)
+            validate_alignment(input_data, output_data)
+
+    def test_calculate_observability_metrics(self) -> None:
+        from scripts.validate_evaluation import calculate_observability_metrics
+        input_data = {
+            "dataset_id": "OBS-DS-001",
+            "test_cases": [
+                {
+                    "query_id": "Q-001",
+                    "expected_span_operations": ["generate_tokens", "is_prompt_safe"],
+                    "max_expected_latency_ms": 150.0
+                },
+                {
+                    "query_id": "Q-002",
+                    "expected_span_operations": ["hybrid_search"],
+                    "max_expected_latency_ms": 100.0
+                }
+            ]
+        }
+        output_data = {
+            "run_id": "RUN-001",
+            "dataset_id": "OBS-DS-001",
+            "model_id": "MODEL-XYZ",
+            "results": [
+                {
+                    "query_id": "Q-001",
+                    "captured_spans": [
+                        {
+                            "span_id": "8a0f2b3c4d5e6f7a",
+                            "trace_id": "0123456789abcdef0123456789abcdef",
+                            "parent_span_id": "N/A",
+                            "name": "is_prompt_safe",
+                            "start_time": "2026-06-22T17:00:00.000Z",
+                            "end_time": "2026-06-22T17:00:00.050Z",
+                            "duration_ms": 50.0,
+                            "service_name": "security",
+                            "status": "ok"
+                        },
+                        {
+                            "span_id": "7b1e2c3d4e5f6a7b",
+                            "trace_id": "0123456789abcdef0123456789abcdef",
+                            "parent_span_id": "8a0f2b3c4d5e6f7a",
+                            "name": "generate_tokens",
+                            "start_time": "2026-06-22T17:00:00.050Z",
+                            "end_time": "2026-06-22T17:00:00.125Z",
+                            "duration_ms": 75.0,
+                            "service_name": "infer",
+                            "status": "ok"
+                        }
+                    ]
+                },
+                {
+                    "query_id": "Q-002",
+                    "captured_spans": [
+                        {
+                            "span_id": "1a2b3c4d5e6f7a8b",
+                            "trace_id": "9876543210fedcba9876543210fedcba",
+                            "parent_span_id": "N/A",
+                            "name": "hybrid_search",
+                            "start_time": "2026-06-22T17:01:00.000Z",
+                            "end_time": "2026-06-22T17:01:00.120Z",
+                            "duration_ms": 120.0,
+                            "service_name": "rag",
+                            "status": "ok"
+                        }
+                    ]
+                }
+            ]
+        }
+        
+        metrics = calculate_observability_metrics(input_data, output_data)
+        # Q-001: latency 50.0 <= 150.0 (compliant), spans match (compliant)
+        # Q-002: latency 120.0 > 100.0 (non-compliant), spans match (compliant)
+        self.assertAlmostEqual(metrics["latency_compliance"], 0.5)
+        self.assertAlmostEqual(metrics["span_operations_match"], 1.0)
 
 

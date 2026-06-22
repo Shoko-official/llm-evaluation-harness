@@ -125,20 +125,72 @@ def calculate_metrics(input_data: dict, output_data: dict) -> dict[str, float]:
         "throughput": avg_throughput
     }
 
+def calculate_observability_metrics(input_data: dict, output_data: dict) -> dict[str, float]:
+    expected_map = {
+        tc["query_id"]: (tc.get("expected_span_operations", []), tc.get("max_expected_latency_ms", 0.0))
+        for tc in input_data.get("test_cases", [])
+    }
+    
+    latency_compliances = []
+    operations_matches = []
+    
+    for res in output_data.get("results", []):
+        q_id = res["query_id"]
+        captured = res.get("captured_spans", [])
+        expected_ops, max_latency = expected_map.get(q_id, ([], 0.0))
+        
+        # 1. Latency Compliance
+        # Find root span (parent_span_id is "N/A" or None) or max duration
+        root_spans = [s for s in captured if s.get("parent_span_id") in ("N/A", None, "null")]
+        if root_spans:
+            latency = root_spans[0].get("duration_ms", 0.0)
+        elif captured:
+            latency = max(s.get("duration_ms", 0.0) for s in captured)
+        else:
+            latency = 0.0
+            
+        latency_compliant = 1.0 if latency <= max_latency else 0.0
+        latency_compliances.append(latency_compliant)
+        
+        # 2. Span Operations Match
+        captured_ops = {s.get("name") for s in captured if s.get("name")}
+        expected_ops_set = set(expected_ops)
+        ops_match = 1.0 if expected_ops_set.issubset(captured_ops) else 0.0
+        operations_matches.append(ops_match)
+        
+    avg_latency_compliance = sum(latency_compliances) / len(latency_compliances) if latency_compliances else 0.0
+    avg_operations_match = sum(operations_matches) / len(operations_matches) if operations_matches else 0.0
+    
+    print("Observability Evaluation Metrics:")
+    print(f"  Latency Compliance Rate: {avg_latency_compliance:.4f}")
+    print(f"  Span Operations Match Rate: {avg_operations_match:.4f}")
+    
+    return {
+        "latency_compliance": avg_latency_compliance,
+        "span_operations_match": avg_operations_match
+    }
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate evaluation inputs and outputs against schemas")
     parser.add_argument("--input", type=str, help="Path to the evaluation input JSON dataset file")
     parser.add_argument("--output", type=str, help="Path to the evaluation output JSON results file")
     parser.add_argument("--input-schema", type=str, help="Path to the input JSON schema")
     parser.add_argument("--output-schema", type=str, help="Path to the output JSON schema")
+    parser.add_argument("--observability", action="store_true", help="Run validation for observability dataset")
     
     args = parser.parse_args()
     
     script_dir = Path(__file__).resolve().parent
     root_dir = script_dir.parent
     
-    input_schema_path = Path(args.input_schema) if args.input_schema else root_dir / "evaluation" / "schemas" / "input.json"
-    output_schema_path = Path(args.output_schema) if args.output_schema else root_dir / "evaluation" / "schemas" / "output.json"
+    input_schema_path = Path(args.input_schema) if args.input_schema else (
+        root_dir / "evaluation" / "schemas" / "observability_input.json" if args.observability else
+        root_dir / "evaluation" / "schemas" / "input.json"
+    )
+    output_schema_path = Path(args.output_schema) if args.output_schema else (
+        root_dir / "evaluation" / "schemas" / "observability_output.json" if args.observability else
+        root_dir / "evaluation" / "schemas" / "output.json"
+    )
     
     input_data = None
     output_data = None
@@ -154,7 +206,10 @@ def main() -> None:
     if input_data and output_data:
         validate_alignment(input_data, output_data)
         print("Input and output alignment validation successful.")
-        calculate_metrics(input_data, output_data)
+        if args.observability:
+            calculate_observability_metrics(input_data, output_data)
+        else:
+            calculate_metrics(input_data, output_data)
 
 if __name__ == "__main__":
     main()
