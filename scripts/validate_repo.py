@@ -20,6 +20,8 @@ REQUIRED_FILES = [
     "docs/README.md",
     "figures/README.md",
     "evaluation/README.md",
+    "evaluation/schemas/observability_input.json",
+    "evaluation/schemas/observability_output.json",
     "scripts/validate_repo.py",
     "scripts/generate_report.py",
     "scripts/export_to_paper.py",
@@ -120,6 +122,31 @@ def lint_text() -> None:
 def run_validate() -> None:
     validate_required_paths()
     validate_foundation_markers()
+    
+    # Run integration checks for observability
+    import subprocess
+    obs_input_file = ROOT / "evaluation" / "datasets" / "observability_mock_input.json"
+    obs_output_file = ROOT / "evaluation" / "datasets" / "observability_mock_output.json"
+    
+    res = subprocess.run([
+        sys.executable,
+        str(ROOT / "scripts" / "generate_mock_data.py"),
+        "--observability",
+        "--input-out", str(obs_input_file),
+        "--output-out", str(obs_output_file)
+    ], capture_output=True, text=True)
+    if res.returncode != 0:
+        fail(f"Observability mock data generation failed:\n{res.stderr}\n{res.stdout}")
+        
+    res = subprocess.run([
+        sys.executable,
+        str(ROOT / "scripts" / "validate_evaluation.py"),
+        "--observability",
+        "--input", str(obs_input_file),
+        "--output", str(obs_output_file)
+    ], capture_output=True, text=True)
+    if res.returncode != 0:
+        fail(f"Observability evaluation validation failed:\n{res.stderr}\n{res.stdout}")
 
 
 def run_lint() -> None:

@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ObservabilityOutputSchema",
+  "description": "Schema for evaluation outputs representing captured traces and spans.",
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "description": "Unique identifier for this evaluation run."
+    },
+    "dataset_id": {
+      "type": "string",
+      "description": "Identifier of the evaluation dataset used."
+    },
+    "model_id": {
+      "type": "string",
+      "description": "Identifier of the model evaluated."
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "query_id": {
+            "type": "string",
+            "description": "Identifier for the matched test case query."
+          },
+          "captured_spans": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "span_id": {
+                  "type": "string",
+                  "pattern": "^[a-fA-F0-9]{16}$",
+                  "description": "Unique 64-bit hex identifier for the span."
+                },
+                "trace_id": {
+                  "type": "string",
+                  "pattern": "^[a-fA-F0-9]{32}$",
+                  "description": "Unique 128-bit hex identifier for the trace."
+                },
+                "parent_span_id": {
+                  "type": ["string", "null"],
+                  "pattern": "^([a-fA-F0-9]{16}|N/A)?$",
+                  "description": "Parent span ID or N/A."
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Span operation name."
+                },
+                "start_time": {
+                  "type": "string",
+                  "description": "Start timestamp."
+                },
+                "end_time": {
+                  "type": "string",
+                  "description": "End timestamp."
+                },
+                "duration_ms": {
+                  "type": "number",
+                  "description": "Duration in milliseconds."
+                },
+                "service_name": {
+                  "type": "string",
+                  "description": "Name of the service emitting telemetry."
+                },
+                "status": {
+                  "type": "string",
+                  "description": "Execution status."
+                }
+              },
+              "required": [
+                "span_id",
+                "trace_id",
+                "parent_span_id",
+                "name",
+                "start_time",
+                "end_time",
+                "duration_ms",
+                "service_name",
+                "status"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Spans captured during request execution."
+          }
+        },
+        "required": ["query_id", "captured_spans"],
+        "additionalProperties": false
+      },
+      "description": "List of outputs corresponding to the test cases."
+    }
+  },
+  "required": ["run_id", "dataset_id", "model_id", "results"],
+  "additionalProperties": false
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ObservabilityInputSchema",
+  "description": "Schema for evaluation input test cases related to observability.",
+  "type": "object",
+  "properties": {
+    "dataset_id": {
+      "type": "string",
+      "description": "Unique identifier for the evaluation dataset."
+    },
+    "test_cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "query_id": {
+            "type": "string",
+            "description": "Unique identifier for the test case query."
+          },
+          "expected_span_operations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The list of expected service span operation names (e.g., hybrid_search, generate_tokens)."
+          },
+          "max_expected_latency_ms": {
+            "type": "number",
+            "description": "The threshold for latency in ms."
+          }
+        },
+        "required": ["query_id", "expected_span_operations", "max_expected_latency_ms"],
+        "additionalProperties": false
+      },
+      "description": "List of evaluation test cases."
+    }
+  },
+  "required": ["dataset_id", "test_cases"],
+  "additionalProperties": false
+}

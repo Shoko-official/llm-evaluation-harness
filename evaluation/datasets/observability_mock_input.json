@@ -1,0 +1,30 @@
+{
+  "dataset_id": "mock_observability_baseline",
+  "test_cases": [
+    {
+      "query_id": "Q-001",
+      "expected_span_operations": [
+        "generate_tokens",
+        "is_prompt_safe"
+      ],
+      "max_expected_latency_ms": 150.0
+    },
+    {
+      "query_id": "Q-002",
+      "expected_span_operations": [
+        "hybrid_search",
+        "rerank_chunks",
+        "generate_tokens"
+      ],
+      "max_expected_latency_ms": 300.0
+    },
+    {
+      "query_id": "Q-003",
+      "expected_span_operations": [
+        "generate_tokens",
+        "check_tool_call"
+      ],
+      "max_expected_latency_ms": 200.0
+    }
+  ]
+}
