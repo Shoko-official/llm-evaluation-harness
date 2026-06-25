@@ -8,7 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.validate_evaluation import validate_alignment, calculate_metrics
+from scripts.validate_evaluation import (
+    validate_alignment,
+    calculate_metrics,
+    calculate_agent_metrics,
+    calculate_dataset_quality_metrics
+)
 
 class TestEvaluationSchemas(unittest.TestCase):
     def setUp(self) -> None:
@@ -25,6 +30,18 @@ class TestEvaluationSchemas(unittest.TestCase):
 
         with open(self.schemas_dir / "observability_output.json", "r", encoding="utf-8") as f:
             self.obs_output_schema = json.load(f)
+
+        with open(self.schemas_dir / "agent_input.json", "r", encoding="utf-8") as f:
+            self.agent_input_schema = json.load(f)
+
+        with open(self.schemas_dir / "agent_output.json", "r", encoding="utf-8") as f:
+            self.agent_output_schema = json.load(f)
+
+        with open(self.schemas_dir / "dataset_quality_input.json", "r", encoding="utf-8") as f:
+            self.dq_input_schema = json.load(f)
+
+        with open(self.schemas_dir / "dataset_quality_output.json", "r", encoding="utf-8") as f:
+            self.dq_output_schema = json.load(f)
 
     def test_valid_input(self) -> None:
         valid_input = {
@@ -353,5 +370,114 @@ class TestEvaluationSchemas(unittest.TestCase):
         # Q-002: latency 120.0 > 100.0 (non-compliant), spans match (compliant)
         self.assertAlmostEqual(metrics["latency_compliance"], 0.5)
         self.assertAlmostEqual(metrics["span_operations_match"], 1.0)
+
+    def test_agent_mock_generator(self) -> None:
+        import tempfile
+        from scripts.generate_mock_data import generate_mock_agent_data
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            input_file = tmp_path / "agent_input.json"
+            output_file = tmp_path / "agent_output.json"
+            
+            generate_mock_agent_data(input_file, output_file)
+            
+            with open(input_file, "r", encoding="utf-8") as f:
+                input_data = json.load(f)
+            with open(output_file, "r", encoding="utf-8") as f:
+                output_data = json.load(f)
+                
+            validate(instance=input_data, schema=self.agent_input_schema)
+            validate(instance=output_data, schema=self.agent_output_schema)
+            validate_alignment(input_data, output_data)
+
+    def test_dataset_quality_mock_generator(self) -> None:
+        import tempfile
+        from scripts.generate_mock_data import generate_mock_dataset_quality_data
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            input_file = tmp_path / "dq_input.json"
+            output_file = tmp_path / "dq_output.json"
+            
+            generate_mock_dataset_quality_data(input_file, output_file)
+            
+            with open(input_file, "r", encoding="utf-8") as f:
+                input_data = json.load(f)
+            with open(output_file, "r", encoding="utf-8") as f:
+                output_data = json.load(f)
+                
+            validate(instance=input_data, schema=self.dq_input_schema)
+            validate(instance=output_data, schema=self.dq_output_schema)
+            validate_alignment(input_data, output_data)
+
+    def test_calculate_agent_metrics(self) -> None:
+        input_data = {
+            "dataset_id": "mock_agent_baseline",
+            "test_cases": [
+                {
+                    "query_id": "Q-001",
+                    "task_instruction": "Calculate the sum of 45 and 90, then multiply by 2.",
+                    "expected_tools": ["calculator", "calculator"],
+                    "reference_answer": "270"
+                }
+            ]
+        }
+        output_data = {
+            "run_id": "run_mock_agent_001",
+            "dataset_id": "mock_agent_baseline",
+            "model_id": "mock_agent_model_v1",
+            "results": [
+                {
+                    "query_id": "Q-001",
+                    "actual_tools_used": ["calculator", "calculator"],
+                    "generated_answer": "The sum is 135 and multiplied by 2 is 270.",
+                    "steps_taken": 3,
+                    "task_success": True,
+                    "tool_call_accuracy": 1.0,
+                    "execution_time_ms": 1250.0
+                }
+            ]
+        }
+        metrics = calculate_agent_metrics(input_data, output_data)
+        self.assertAlmostEqual(metrics["task_success_rate"], 1.0)
+        self.assertAlmostEqual(metrics["tool_call_accuracy"], 1.0)
+        self.assertAlmostEqual(metrics["average_steps"], 3.0)
+        self.assertAlmostEqual(metrics["average_execution_time_ms"], 1250.0)
+
+    def test_calculate_dataset_quality_metrics(self) -> None:
+        input_data = {
+            "dataset_id": "mock_dataset_quality_baseline",
+            "samples": [
+                {
+                    "sample_id": "S-001",
+                    "instruction": "Write a python function to check if a number is prime.",
+                    "input": None,
+                    "output": "def is_prime(n):\n    if n <= 1: return False\n    for i in range(2, int(n**0.5)+1):\n        if n % i == 0: return False\n    return True"
+                }
+            ]
+        }
+        output_data = {
+            "run_id": "run_mock_quality_001",
+            "dataset_id": "mock_dataset_quality_baseline",
+            "metrics": {
+                "instruction_diversity_score": 1.0,
+                "overall_quality_score": 0.85,
+                "sample_count": 1
+            },
+            "sample_scores": [
+                {
+                    "sample_id": "S-001",
+                    "relevance_score": 0.9,
+                    "grammatical_correctness": 0.95,
+                    "complexity_score": 0.7,
+                    "overall_score": 0.85
+                }
+            ]
+        }
+        metrics = calculate_dataset_quality_metrics(input_data, output_data)
+        self.assertAlmostEqual(metrics["instruction_diversity_score"], 1.0)
+        self.assertAlmostEqual(metrics["overall_quality_score"], 0.85)
+        self.assertEqual(metrics["sample_count"], 1)
 
 

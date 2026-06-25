@@ -12,7 +12,12 @@ from evaluation.metrics import (
     calculate_mrr,
     calculate_citation_accuracy,
     calculate_average_ttft,
-    calculate_throughput
+    calculate_throughput,
+    calculate_tool_call_accuracy,
+    calculate_instruction_diversity,
+    calculate_sample_relevance,
+    calculate_grammatical_correctness,
+    calculate_complexity_score
 )
 
 class TestMetrics(unittest.TestCase):
@@ -63,6 +68,32 @@ class TestMetrics(unittest.TestCase):
         self.assertEqual(calculate_average_ttft([]), 0.0)
         self.assertAlmostEqual(calculate_throughput(100, 2.5), 40.0)
         self.assertEqual(calculate_throughput(100, 0.0), 0.0)
+
+    def test_tool_call_accuracy(self) -> None:
+        self.assertAlmostEqual(calculate_tool_call_accuracy(["calc", "search"], ["calc", "search"]), 1.0)
+        self.assertAlmostEqual(calculate_tool_call_accuracy(["calc"], ["calc", "search"]), 2.0 / 3.0)
+        self.assertAlmostEqual(calculate_tool_call_accuracy(["calc", "search"], ["calc"]), 2.0 / 3.0)
+        self.assertEqual(calculate_tool_call_accuracy([], []), 1.0)
+        self.assertEqual(calculate_tool_call_accuracy(["calc"], []), 0.0)
+        self.assertEqual(calculate_tool_call_accuracy([], ["calc"]), 0.0)
+
+    def test_instruction_diversity(self) -> None:
+        self.assertAlmostEqual(calculate_instruction_diversity(["a", "b", "c"]), 1.0)
+        self.assertAlmostEqual(calculate_instruction_diversity(["a", "a", "b"]), 2.0 / 3.0)
+        self.assertEqual(calculate_instruction_diversity([]), 1.0)
+
+    def test_dataset_quality_metrics(self) -> None:
+        # Test relevance
+        self.assertGreater(calculate_sample_relevance("test this", "this is a test output"), 0.0)
+        self.assertEqual(calculate_sample_relevance("", "output"), 0.0)
+        
+        # Test grammatical correctness
+        self.assertEqual(calculate_grammatical_correctness("Hello world."), 1.0)
+        self.assertLess(calculate_grammatical_correctness("hello world"), 1.0) # lowercase start and missing punctuation
+        
+        # Test complexity
+        self.assertGreater(calculate_complexity_score("If we find the key, then open it."), 0.0)
+        self.assertEqual(calculate_complexity_score(""), 0.0)
 
 if __name__ == "__main__":
     unittest.main()

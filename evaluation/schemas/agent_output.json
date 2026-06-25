@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AgentEvaluationOutputSchema",
+  "description": "Schema for agent task evaluation run outputs.",
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "description": "Unique identifier for this evaluation run."
+    },
+    "dataset_id": {
+      "type": "string",
+      "description": "Identifier of the evaluation dataset used."
+    },
+    "model_id": {
+      "type": "string",
+      "description": "Identifier of the model evaluated."
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "query_id": {
+            "type": "string",
+            "description": "Identifier for the matched test case query."
+          },
+          "actual_tools_used": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of tools actually called by the agent during the run."
+          },
+          "generated_answer": {
+            "type": "string",
+            "description": "The final answer produced by the agent."
+          },
+          "steps_taken": {
+            "type": "integer",
+            "description": "The number of reasoning-action steps taken by the agent."
+          },
+          "task_success": {
+            "type": "boolean",
+            "description": "Whether the agent successfully completed the task instructions."
+          },
+          "tool_call_accuracy": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Precision/recall or similarity score of actual vs expected tool calls."
+          },
+          "execution_time_ms": {
+            "type": "number",
+            "description": "Total execution time in milliseconds."
+          }
+        },
+        "required": [
+          "query_id",
+          "actual_tools_used",
+          "generated_answer",
+          "steps_taken",
+          "task_success",
+          "tool_call_accuracy",
+          "execution_time_ms"
+        ],
+        "additionalProperties": false
+      },
+      "description": "List of outputs corresponding to the agent test cases."
+    }
+  },
+  "required": ["run_id", "dataset_id", "model_id", "results"],
+  "additionalProperties": false
+}

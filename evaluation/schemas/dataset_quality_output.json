@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DatasetQualityOutputSchema",
+  "description": "Schema for synthetic dataset quality evaluation output results.",
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "description": "Unique identifier for this quality evaluation run."
+    },
+    "dataset_id": {
+      "type": "string",
+      "description": "Identifier of the evaluated synthetic dataset."
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "instruction_diversity_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Diversity score measuring instruction uniqueness/redundancy."
+        },
+        "overall_quality_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Aggregated overall quality score of the dataset."
+        },
+        "sample_count": {
+          "type": "integer",
+          "description": "Total number of samples evaluated."
+        }
+      },
+      "required": ["instruction_diversity_score", "overall_quality_score", "sample_count"],
+      "additionalProperties": false
+    },
+    "sample_scores": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sample_id": {
+            "type": "string",
+            "description": "Identifier for the matched synthetic sample."
+          },
+          "relevance_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Relevance of output to the instruction."
+          },
+          "grammatical_correctness": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Syntax and formatting cleanliness score."
+          },
+          "complexity_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Instruction complexity / richness rating."
+          },
+          "overall_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Weighted average score for this specific sample."
+          }
+        },
+        "required": [
+          "sample_id",
+          "relevance_score",
+          "grammatical_correctness",
+          "complexity_score",
+          "overall_score"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Individual quality scores for each synthetic sample."
+    }
+  },
+  "required": ["run_id", "dataset_id", "metrics", "sample_scores"],
+  "additionalProperties": false
+}

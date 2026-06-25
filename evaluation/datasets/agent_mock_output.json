@@ -1,0 +1,31 @@
+{
+  "run_id": "run_mock_agent_001",
+  "dataset_id": "mock_agent_baseline",
+  "model_id": "mock_agent_model_v1",
+  "results": [
+    {
+      "query_id": "Q-001",
+      "actual_tools_used": [
+        "calculator",
+        "calculator"
+      ],
+      "generated_answer": "The sum is 135 and multiplied by 2 is 270.",
+      "steps_taken": 3,
+      "task_success": true,
+      "tool_call_accuracy": 1.0,
+      "execution_time_ms": 1250.0
+    },
+    {
+      "query_id": "Q-002",
+      "actual_tools_used": [
+        "web_search",
+        "translator"
+      ],
+      "generated_answer": "La m\u00e9t\u00e9o \u00e0 Paris est ensoleill\u00e9e.",
+      "steps_taken": 4,
+      "task_success": true,
+      "tool_call_accuracy": 1.0,
+      "execution_time_ms": 1850.0
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DatasetQualityInputSchema",
+  "description": "Schema for synthetic dataset quality evaluation input.",
+  "type": "object",
+  "properties": {
+    "dataset_id": {
+      "type": "string",
+      "description": "Unique identifier for the synthetic dataset."
+    },
+    "samples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sample_id": {
+            "type": "string",
+            "description": "Unique identifier for the synthetic data sample."
+          },
+          "instruction": {
+            "type": "string",
+            "description": "The bootstrap/self-generated instruction."
+          },
+          "input": {
+            "type": ["string", "null"],
+            "description": "Context or input string (optional)."
+          },
+          "output": {
+            "type": "string",
+            "description": "The generated target output or response."
+          }
+        },
+        "required": ["sample_id", "instruction", "output"],
+        "additionalProperties": false
+      },
+      "description": "List of synthetic data samples to evaluate."
+    }
+  },
+  "required": ["dataset_id", "samples"],
+  "additionalProperties": false
+}

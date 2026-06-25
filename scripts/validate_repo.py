@@ -22,6 +22,10 @@ REQUIRED_FILES = [
     "evaluation/README.md",
     "evaluation/schemas/observability_input.json",
     "evaluation/schemas/observability_output.json",
+    "evaluation/schemas/agent_input.json",
+    "evaluation/schemas/agent_output.json",
+    "evaluation/schemas/dataset_quality_input.json",
+    "evaluation/schemas/dataset_quality_output.json",
     "scripts/validate_repo.py",
     "scripts/generate_report.py",
     "scripts/export_to_paper.py",
@@ -123,8 +127,9 @@ def run_validate() -> None:
     validate_required_paths()
     validate_foundation_markers()
     
-    # Run integration checks for observability
     import subprocess
+    
+    # 1. Run integration checks for observability
     obs_input_file = ROOT / "evaluation" / "datasets" / "observability_mock_input.json"
     obs_output_file = ROOT / "evaluation" / "datasets" / "observability_mock_output.json"
     
@@ -147,6 +152,54 @@ def run_validate() -> None:
     ], capture_output=True, text=True)
     if res.returncode != 0:
         fail(f"Observability evaluation validation failed:\n{res.stderr}\n{res.stdout}")
+
+    # 2. Run integration checks for agent
+    agent_input_file = ROOT / "evaluation" / "datasets" / "agent_mock_input.json"
+    agent_output_file = ROOT / "evaluation" / "datasets" / "agent_mock_output.json"
+    
+    res = subprocess.run([
+        sys.executable,
+        str(ROOT / "scripts" / "generate_mock_data.py"),
+        "--agent",
+        "--input-out", str(agent_input_file),
+        "--output-out", str(agent_output_file)
+    ], capture_output=True, text=True)
+    if res.returncode != 0:
+        fail(f"Agent mock data generation failed:\n{res.stderr}\n{res.stdout}")
+        
+    res = subprocess.run([
+        sys.executable,
+        str(ROOT / "scripts" / "validate_evaluation.py"),
+        "--agent",
+        "--input", str(agent_input_file),
+        "--output", str(agent_output_file)
+    ], capture_output=True, text=True)
+    if res.returncode != 0:
+        fail(f"Agent evaluation validation failed:\n{res.stderr}\n{res.stdout}")
+
+    # 3. Run integration checks for dataset quality
+    dq_input_file = ROOT / "evaluation" / "datasets" / "dataset_quality_mock_input.json"
+    dq_output_file = ROOT / "evaluation" / "datasets" / "dataset_quality_mock_output.json"
+    
+    res = subprocess.run([
+        sys.executable,
+        str(ROOT / "scripts" / "generate_mock_data.py"),
+        "--dataset-quality",
+        "--input-out", str(dq_input_file),
+        "--output-out", str(dq_output_file)
+    ], capture_output=True, text=True)
+    if res.returncode != 0:
+        fail(f"Dataset quality mock data generation failed:\n{res.stderr}\n{res.stdout}")
+        
+    res = subprocess.run([
+        sys.executable,
+        str(ROOT / "scripts" / "validate_evaluation.py"),
+        "--dataset-quality",
+        "--input", str(dq_input_file),
+        "--output", str(dq_output_file)
+    ], capture_output=True, text=True)
+    if res.returncode != 0:
+        fail(f"Dataset quality validation failed:\n{res.stderr}\n{res.stdout}")
 
 
 def run_lint() -> None:

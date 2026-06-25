@@ -1,0 +1,17 @@
+{
+  "dataset_id": "mock_dataset_quality_baseline",
+  "samples": [
+    {
+      "sample_id": "S-001",
+      "instruction": "Write a python function to check if a number is prime.",
+      "input": null,
+      "output": "def is_prime(n):\n    if n <= 1: return False\n    for i in range(2, int(n**0.5)+1):\n        if n % i == 0: return False\n    return True"
+    },
+    {
+      "sample_id": "S-002",
+      "instruction": "Explain the concept of quantum superposition in simple terms.",
+      "input": null,
+      "output": "Quantum superposition is the fundamental principle of quantum mechanics where a system can exist in multiple states at the same time."
+    }
+  ]
+}
