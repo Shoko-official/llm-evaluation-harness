@@ -88,4 +88,80 @@ def calculate_throughput(total_tokens: int, total_duration_seconds: float) -> fl
         return 0.0
     return total_tokens / total_duration_seconds
 
+def calculate_tool_call_accuracy(actual_tools: list[str], expected_tools: list[str]) -> float:
+    """
+    Calculate F1 score of actual vs expected tool calls.
+    """
+    if not expected_tools:
+        return 1.0 if not actual_tools else 0.0
+    if not actual_tools:
+        return 0.0
+    
+    actual_set = set(actual_tools)
+    expected_set = set(expected_tools)
+    intersection = actual_set & expected_set
+    
+    precision = len(intersection) / len(actual_set)
+    recall = len(intersection) / len(expected_set)
+    
+    if precision + recall == 0.0:
+        return 0.0
+        
+    return 2.0 * precision * recall / (precision + recall)
+
+def calculate_instruction_diversity(instructions: list[str]) -> float:
+    """
+    Calculate instruction diversity ratio (unique instructions / total instructions).
+    """
+    if not instructions:
+        return 1.0
+    unique_instructions = set(instructions)
+    return len(unique_instructions) / len(instructions)
+
+def calculate_sample_relevance(instruction: str, output: str) -> float:
+    """
+    Calculate lexical overlap-based relevance score between instruction and output.
+    """
+    if not instruction or not output:
+        return 0.0
+    inst_words = set(re.findall(r"\w+", instruction.lower()))
+    out_words = set(re.findall(r"\w+", output.lower()))
+    if not inst_words:
+        return 1.0
+    overlap = len(inst_words & out_words)
+    return min(1.0, (overlap / len(inst_words)) * 2.0)
+
+def calculate_grammatical_correctness(text: str) -> float:
+    """
+    Calculate a syntax/format sanity score based on punctuation and repeating words.
+    """
+    if not text:
+        return 0.0
+    score = 1.0
+    if not text[0].isalnum():
+        score -= 0.1
+    if text[-1] not in {".", "!", "?", '"', "'", "`"}:
+        score -= 0.2
+    words = text.split()
+    if len(words) > 0:
+        repeats = sum(1 for w1, w2 in zip(words, words[1:]) if w1.lower() == w2.lower())
+        score -= min(0.4, (repeats / len(words)) * 2.0)
+    return max(0.0, score)
+
+def calculate_complexity_score(instruction: str) -> float:
+    """
+    Calculate instruction complexity based on word count and logical connectors.
+    """
+    if not instruction:
+        return 0.0
+    words = instruction.split()
+    length_score = min(1.0, len(words) / 30.0)
+    
+    connectors = {"if", "then", "else", "and", "or", "but", "because", "when", "how", "why"}
+    connector_count = sum(1 for w in words if w.lower() in connectors)
+    connector_score = min(1.0, connector_count / 5.0)
+    
+    return 0.6 * length_score + 0.4 * connector_score
+
+
 

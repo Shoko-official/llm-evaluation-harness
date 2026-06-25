@@ -1,0 +1,23 @@
+{
+  "dataset_id": "mock_agent_baseline",
+  "test_cases": [
+    {
+      "query_id": "Q-001",
+      "task_instruction": "Calculate the sum of 45 and 90, then multiply by 2.",
+      "expected_tools": [
+        "calculator",
+        "calculator"
+      ],
+      "reference_answer": "270"
+    },
+    {
+      "query_id": "Q-002",
+      "task_instruction": "Search for the weather in Paris, then translate the summary to French.",
+      "expected_tools": [
+        "web_search",
+        "translator"
+      ],
+      "reference_answer": "La m\u00e9t\u00e9o \u00e0 Paris..."
+    }
+  ]
+}

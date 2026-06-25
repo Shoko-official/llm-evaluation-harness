@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AgentEvaluationInputSchema",
+  "description": "Schema for agent task evaluation input test cases.",
+  "type": "object",
+  "properties": {
+    "dataset_id": {
+      "type": "string",
+      "description": "Unique identifier for the evaluation dataset."
+    },
+    "test_cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "query_id": {
+            "type": "string",
+            "description": "Unique identifier for the test case query."
+          },
+          "task_instruction": {
+            "type": "string",
+            "description": "The prompt/task instruction to be sent to the agent."
+          },
+          "expected_tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of tools that the agent is expected to invoke during execution."
+          },
+          "reference_answer": {
+            "type": "string",
+            "description": "The ground truth or reference answer for the task."
+          }
+        },
+        "required": ["query_id", "task_instruction", "expected_tools", "reference_answer"],
+        "additionalProperties": false
+      },
+      "description": "List of evaluation test cases."
+    }
+  },
+  "required": ["dataset_id", "test_cases"],
+  "additionalProperties": false
+}

@@ -233,11 +233,127 @@ def generate_mock_observability_data(input_path: Path, output_path: Path) -> Non
     print(f"Generated mock observability input dataset: {input_path}")
     print(f"Generated mock observability output results: {output_path}")
 
+def generate_mock_agent_data(input_path: Path, output_path: Path) -> None:
+    input_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    input_data = {
+        "dataset_id": "mock_agent_baseline",
+        "test_cases": [
+            {
+                "query_id": "Q-001",
+                "task_instruction": "Calculate the sum of 45 and 90, then multiply by 2.",
+                "expected_tools": ["calculator", "calculator"],
+                "reference_answer": "270"
+            },
+            {
+                "query_id": "Q-002",
+                "task_instruction": "Search for the weather in Paris, then translate the summary to French.",
+                "expected_tools": ["web_search", "translator"],
+                "reference_answer": "La météo à Paris..."
+            }
+        ]
+    }
+    
+    output_data = {
+        "run_id": "run_mock_agent_001",
+        "dataset_id": "mock_agent_baseline",
+        "model_id": "mock_agent_model_v1",
+        "results": [
+            {
+                "query_id": "Q-001",
+                "actual_tools_used": ["calculator", "calculator"],
+                "generated_answer": "The sum is 135 and multiplied by 2 is 270.",
+                "steps_taken": 3,
+                "task_success": True,
+                "tool_call_accuracy": 1.0,
+                "execution_time_ms": 1250.0
+            },
+            {
+                "query_id": "Q-002",
+                "actual_tools_used": ["web_search", "translator"],
+                "generated_answer": "La météo à Paris est ensoleillée.",
+                "steps_taken": 4,
+                "task_success": True,
+                "tool_call_accuracy": 1.0,
+                "execution_time_ms": 1850.0
+            }
+        ]
+    }
+    
+    with open(input_path, "w", encoding="utf-8") as f:
+        json.dump(input_data, f, indent=2)
+        
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(output_data, f, indent=2)
+        
+    print(f"Generated mock agent input dataset: {input_path}")
+    print(f"Generated mock agent output results: {output_path}")
+
+def generate_mock_dataset_quality_data(input_path: Path, output_path: Path) -> None:
+    input_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    input_data = {
+        "dataset_id": "mock_dataset_quality_baseline",
+        "samples": [
+            {
+                "sample_id": "S-001",
+                "instruction": "Write a python function to check if a number is prime.",
+                "input": None,
+                "output": "def is_prime(n):\n    if n <= 1: return False\n    for i in range(2, int(n**0.5)+1):\n        if n % i == 0: return False\n    return True"
+            },
+            {
+                "sample_id": "S-002",
+                "instruction": "Explain the concept of quantum superposition in simple terms.",
+                "input": None,
+                "output": "Quantum superposition is the fundamental principle of quantum mechanics where a system can exist in multiple states at the same time."
+            }
+        ]
+    }
+    
+    output_data = {
+        "run_id": "run_mock_quality_001",
+        "dataset_id": "mock_dataset_quality_baseline",
+        "metrics": {
+            "instruction_diversity_score": 1.0,
+            "overall_quality_score": 0.85,
+            "sample_count": 2
+        },
+        "sample_scores": [
+            {
+                "sample_id": "S-001",
+                "relevance_score": 0.9,
+                "grammatical_correctness": 0.95,
+                "complexity_score": 0.7,
+                "overall_score": 0.85
+            },
+            {
+                "sample_id": "S-002",
+                "relevance_score": 0.85,
+                "grammatical_correctness": 0.9,
+                "complexity_score": 0.8,
+                "overall_score": 0.85
+            }
+        ]
+    }
+    
+    with open(input_path, "w", encoding="utf-8") as f:
+        json.dump(input_data, f, indent=2)
+        
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(output_data, f, indent=2)
+        
+    print(f"Generated mock dataset quality input: {input_path}")
+    print(f"Generated mock dataset quality output: {output_path}")
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate synthetic evaluation data for testing")
     parser.add_argument("--input-out", type=str, help="Destination path for the mock input dataset JSON")
     parser.add_argument("--output-out", type=str, help="Destination path for the mock output results JSON")
     parser.add_argument("--observability", action="store_true", help="Generate observability mock dataset")
+    parser.add_argument("--agent", action="store_true", help="Generate agent evaluation mock dataset")
+    parser.add_argument("--dataset-quality", action="store_true", help="Generate dataset quality mock dataset")
     
     args = parser.parse_args()
     
@@ -248,6 +364,14 @@ def main() -> None:
         input_path = Path(args.input_out) if args.input_out else root_dir / "evaluation" / "datasets" / "observability_mock_input.json"
         output_path = Path(args.output_out) if args.output_out else root_dir / "evaluation" / "datasets" / "observability_mock_output.json"
         generate_mock_observability_data(input_path, output_path)
+    elif args.agent:
+        input_path = Path(args.input_out) if args.input_out else root_dir / "evaluation" / "datasets" / "agent_mock_input.json"
+        output_path = Path(args.output_out) if args.output_out else root_dir / "evaluation" / "datasets" / "agent_mock_output.json"
+        generate_mock_agent_data(input_path, output_path)
+    elif args.dataset_quality:
+        input_path = Path(args.input_out) if args.input_out else root_dir / "evaluation" / "datasets" / "dataset_quality_mock_input.json"
+        output_path = Path(args.output_out) if args.output_out else root_dir / "evaluation" / "datasets" / "dataset_quality_mock_output.json"
+        generate_mock_dataset_quality_data(input_path, output_path)
     else:
         input_path = Path(args.input_out) if args.input_out else root_dir / "evaluation" / "datasets" / "mock_input.json"
         output_path = Path(args.output_out) if args.output_out else root_dir / "evaluation" / "datasets" / "mock_output.json"

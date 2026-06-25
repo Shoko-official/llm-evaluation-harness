@@ -1,0 +1,25 @@
+{
+  "run_id": "run_mock_quality_001",
+  "dataset_id": "mock_dataset_quality_baseline",
+  "metrics": {
+    "instruction_diversity_score": 1.0,
+    "overall_quality_score": 0.85,
+    "sample_count": 2
+  },
+  "sample_scores": [
+    {
+      "sample_id": "S-001",
+      "relevance_score": 0.9,
+      "grammatical_correctness": 0.95,
+      "complexity_score": 0.7,
+      "overall_score": 0.85
+    },
+    {
+      "sample_id": "S-002",
+      "relevance_score": 0.85,
+      "grammatical_correctness": 0.9,
+      "complexity_score": 0.8,
+      "overall_score": 0.85
+    }
+  ]
+}

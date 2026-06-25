@@ -50,16 +50,17 @@ def validate_alignment(input_data: dict, output_data: dict) -> None:
         )
     
     # 2. Check query alignment
-    input_queries = {tc["query_id"] for tc in input_data.get("test_cases", [])}
-    output_queries = {res["query_id"] for res in output_data.get("results", [])}
-    
-    missing_queries = input_queries - output_queries
-    if missing_queries:
-        fail(f"Output is missing results for query IDs: {', '.join(sorted(missing_queries))}")
+    if "test_cases" in input_data and "results" in output_data:
+        input_queries = {tc["query_id"] for tc in input_data.get("test_cases", [])}
+        output_queries = {res["query_id"] for res in output_data.get("results", [])}
         
-    extra_queries = output_queries - input_queries
-    if extra_queries:
-        fail(f"Output contains results for unknown query IDs: {', '.join(sorted(extra_queries))}")
+        missing_queries = input_queries - output_queries
+        if missing_queries:
+            fail(f"Output is missing results for query IDs: {', '.join(sorted(missing_queries))}")
+            
+        extra_queries = output_queries - input_queries
+        if extra_queries:
+            fail(f"Output contains results for unknown query IDs: {', '.join(sorted(extra_queries))}")
 
 def calculate_metrics(input_data: dict, output_data: dict) -> dict[str, float]:
     expected_map = {tc["query_id"]: tc.get("expected_document_ids", []) for tc in input_data.get("test_cases", [])}
@@ -170,6 +171,74 @@ def calculate_observability_metrics(input_data: dict, output_data: dict) -> dict
         "span_operations_match": avg_operations_match
     }
 
+def calculate_agent_metrics(input_data: dict, output_data: dict) -> dict[str, float]:
+    expected_map = {
+        tc["query_id"]: tc.get("expected_tools", [])
+        for tc in input_data.get("test_cases", [])
+    }
+    
+    successes = []
+    tool_accuracies = []
+    steps = []
+    times = []
+    
+    from evaluation.metrics import calculate_tool_call_accuracy
+    
+    for res in output_data.get("results", []):
+        q_id = res["query_id"]
+        actual_tools = res.get("actual_tools_used", [])
+        expected_tools = expected_map.get(q_id, [])
+        
+        successes.append(1.0 if res.get("task_success") else 0.0)
+        tool_accuracies.append(calculate_tool_call_accuracy(actual_tools, expected_tools))
+        steps.append(res.get("steps_taken", 0))
+        times.append(res.get("execution_time_ms", 0.0))
+        
+    avg_success = sum(successes) / len(successes) if successes else 0.0
+    avg_tool_accuracy = sum(tool_accuracies) / len(tool_accuracies) if tool_accuracies else 0.0
+    avg_steps = sum(steps) / len(steps) if steps else 0.0
+    avg_time = sum(times) / len(times) if times else 0.0
+    
+    print("Agent Evaluation Metrics:")
+    print(f"  Task Success Rate: {avg_success:.4f}")
+    print(f"  Tool Call Accuracy (F1): {avg_tool_accuracy:.4f}")
+    print(f"  Average Steps Taken: {avg_steps:.2f}")
+    print(f"  Average Execution Time: {avg_time:.2f}ms")
+    
+    return {
+        "task_success_rate": avg_success,
+        "tool_call_accuracy": avg_tool_accuracy,
+        "average_steps": avg_steps,
+        "average_execution_time_ms": avg_time
+    }
+
+def calculate_dataset_quality_metrics(input_data: dict, output_data: dict) -> dict[str, float]:
+    input_samples = {s["sample_id"] for s in input_data.get("samples", [])}
+    output_samples = {s["sample_id"] for s in output_data.get("sample_scores", [])}
+    
+    missing_samples = input_samples - output_samples
+    if missing_samples:
+        fail(f"Output quality scores are missing for sample IDs: {', '.join(sorted(missing_samples))}")
+        
+    extra_samples = output_samples - input_samples
+    if extra_samples:
+        fail(f"Output quality scores contain unknown sample IDs: {', '.join(sorted(extra_samples))}")
+        
+    metrics = output_data.get("metrics", {})
+    diversity = metrics.get("instruction_diversity_score", 0.0)
+    overall_quality = metrics.get("overall_quality_score", 0.0)
+    
+    print("Dataset Quality Evaluation Metrics:")
+    print(f"  Instruction Diversity Score: {diversity:.4f}")
+    print(f"  Overall Dataset Quality Score: {overall_quality:.4f}")
+    print(f"  Sample Count: {metrics.get('sample_count', 0)}")
+    
+    return {
+        "instruction_diversity_score": diversity,
+        "overall_quality_score": overall_quality,
+        "sample_count": metrics.get("sample_count", 0)
+    }
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate evaluation inputs and outputs against schemas")
     parser.add_argument("--input", type=str, help="Path to the evaluation input JSON dataset file")
@@ -177,21 +246,38 @@ def main() -> None:
     parser.add_argument("--input-schema", type=str, help="Path to the input JSON schema")
     parser.add_argument("--output-schema", type=str, help="Path to the output JSON schema")
     parser.add_argument("--observability", action="store_true", help="Run validation for observability dataset")
+    parser.add_argument("--agent", action="store_true", help="Run validation for agent evaluation dataset")
+    parser.add_argument("--dataset-quality", action="store_true", help="Run validation for synthetic dataset quality")
     
     args = parser.parse_args()
     
     script_dir = Path(__file__).resolve().parent
     root_dir = script_dir.parent
     
-    input_schema_path = Path(args.input_schema) if args.input_schema else (
-        root_dir / "evaluation" / "schemas" / "observability_input.json" if args.observability else
-        root_dir / "evaluation" / "schemas" / "input.json"
-    )
-    output_schema_path = Path(args.output_schema) if args.output_schema else (
-        root_dir / "evaluation" / "schemas" / "observability_output.json" if args.observability else
-        root_dir / "evaluation" / "schemas" / "output.json"
-    )
-    
+    if args.input_schema:
+        input_schema_path = Path(args.input_schema)
+    else:
+        if args.observability:
+            input_schema_path = root_dir / "evaluation" / "schemas" / "observability_input.json"
+        elif args.agent:
+            input_schema_path = root_dir / "evaluation" / "schemas" / "agent_input.json"
+        elif args.dataset_quality:
+            input_schema_path = root_dir / "evaluation" / "schemas" / "dataset_quality_input.json"
+        else:
+            input_schema_path = root_dir / "evaluation" / "schemas" / "input.json"
+
+    if args.output_schema:
+        output_schema_path = Path(args.output_schema)
+    else:
+        if args.observability:
+            output_schema_path = root_dir / "evaluation" / "schemas" / "observability_output.json"
+        elif args.agent:
+            output_schema_path = root_dir / "evaluation" / "schemas" / "agent_output.json"
+        elif args.dataset_quality:
+            output_schema_path = root_dir / "evaluation" / "schemas" / "dataset_quality_output.json"
+        else:
+            output_schema_path = root_dir / "evaluation" / "schemas" / "output.json"
+            
     input_data = None
     output_data = None
     
@@ -208,6 +294,10 @@ def main() -> None:
         print("Input and output alignment validation successful.")
         if args.observability:
             calculate_observability_metrics(input_data, output_data)
+        elif args.agent:
+            calculate_agent_metrics(input_data, output_data)
+        elif args.dataset_quality:
+            calculate_dataset_quality_metrics(input_data, output_data)
         else:
             calculate_metrics(input_data, output_data)
 
